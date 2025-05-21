@@ -1,0 +1,11 @@
+{
+  "requests": 3,
+  "errors": 2,
+  "processing_times": [
+    4.34236216545105,
+    8.808297157287598,
+    2.9177026748657227
+  ],
+  "last_check": null,
+  "health_status": "unknown"
+}
