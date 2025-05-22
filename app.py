@@ -29,13 +29,24 @@ import requests
 import pandas as pd
 from accent_model import AccentDetector
 
-# Try to import the websocket headers, but don't fail if it's not available
+# Try to import the context headers, but don't fail if it's not available
 try:
-    from streamlit.web.server.websocket_headers import _get_websocket_headers
-except ImportError:
-    # Create a dummy function for environments where this import is not available
-    def _get_websocket_headers():
-        return {}
+    # Use the new st.context.headers for newer Streamlit versions
+    def get_request_headers():
+        try:
+            return st.context.headers
+        except:
+            return {}
+except:
+    # Fallback for older versions
+    try:
+        from streamlit.web.server.websocket_headers import _get_websocket_headers
+        def get_request_headers():
+            return _get_websocket_headers()
+    except ImportError:
+        # Create a dummy function for environments where this import is not available
+        def get_request_headers():
+            return {}
 
 # Load environment variables
 load_dotenv()
@@ -646,7 +657,7 @@ def health_check():
     """
     try:
         # Check if we can access the request headers
-        headers = _get_websocket_headers()
+        headers = get_request_headers()
 
         # Check if the request is a health check
         if headers.get("X-Health-Check") == "true":
