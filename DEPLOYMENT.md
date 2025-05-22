@@ -312,6 +312,28 @@ The application uses the following environment variables:
    streamlit run app.py --server.port 8502
    ```
 
+5. **YouTube download issues**: If you encounter issues downloading YouTube videos:
+   - Use the file upload feature instead
+   - Use the local sample feature with a path to a local file
+   - Try using a direct media URL instead
+   - Remove timestamp parameters from YouTube URLs
+   - Ensure you have the latest version of yt-dlp and pytube
+
+6. **File upload size limits**: When deploying to cloud platforms, be aware of file upload size limits:
+   - Streamlit Cloud: 200MB file upload limit
+   - Heroku: 500MB request size limit
+   - AWS/GCP/Azure: Configure appropriate limits based on your needs
+
+   To handle larger files, consider:
+   - Implementing server-side file compression
+   - Using cloud storage (S3, GCS) for file uploads
+   - Implementing chunked uploads for large files
+
+7. **Accent detection model issues**: The current implementation uses a placeholder model. For a sophisticated model:
+   - Follow the guidance in [ADVANCED_MODEL.md](ADVANCED_MODEL.md)
+   - Train the model on a dataset of accent samples
+   - Deploy the trained model with your application
+
 ### Getting Help
 
 If you encounter issues not covered in this guide, please:

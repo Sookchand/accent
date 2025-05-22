@@ -1,0 +1,22 @@
+# Example URLs for collecting accent samples
+# Format: One URL per line, comments start with #
+
+# American English
+https://www.youtube.com/watch?v=J7GY1Xg6X20  # American accent sample
+https://www.youtube.com/watch?v=LIQsyHoLudQ  # American English pronunciation
+
+# British English
+https://www.youtube.com/watch?v=ldVJmCKqVnA  # British accent sample
+https://www.youtube.com/watch?v=T7SWETadMn0  # British English pronunciation
+
+# Australian English
+https://www.youtube.com/watch?v=KpBYnL5fAXE  # Australian accent sample
+https://www.youtube.com/watch?v=ZnjoD9w7z0Y  # Australian English pronunciation
+
+# Indian English
+https://www.youtube.com/watch?v=v9arM_agKFA  # Indian accent sample
+https://www.youtube.com/watch?v=dJgoTcyrFZ4  # Indian English pronunciation
+
+# Canadian English
+https://www.youtube.com/watch?v=jrTCDi3xbTw  # Canadian accent sample
+https://www.youtube.com/watch?v=Oe3wj1Y2Hps  # Canadian English pronunciation

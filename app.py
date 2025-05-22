@@ -13,6 +13,7 @@ import time
 import uuid
 import json
 import requests
+import pandas as pd
 from accent_model import AccentDetector
 
 # Try to import the websocket headers, but don't fail if it's not available
@@ -45,6 +46,39 @@ This tool analyzes a speaker's accent from a video to:
 - Provide a confidence score for English proficiency
 - Generate a brief explanation of accent characteristics
 """)
+
+# Initialize accent detector
+@st.cache_resource
+def load_accent_detector(model_path=None):
+    """
+    Load the accent detector with an optional trained model.
+
+    Args:
+        model_path (str, optional): Path to a trained model file.
+
+    Returns:
+        AccentDetector: The accent detector instance.
+    """
+    from accent_model import AccentDetector
+
+    # Check if a model file exists
+    if model_path and os.path.exists(model_path):
+        st.info(f"Loading trained accent detection model from {model_path}...")
+        return AccentDetector(model_path=model_path)
+    else:
+        # Check if there's a model in the models directory
+        models_dir = os.path.join(os.path.dirname(__file__), "models")
+        default_model_path = os.path.join(models_dir, "accent_model.pkl")
+
+        if os.path.exists(default_model_path):
+            st.info(f"Loading trained accent detection model from {default_model_path}...")
+            return AccentDetector(model_path=default_model_path)
+        else:
+            st.warning("No trained accent detection model found. Using placeholder implementation.")
+            return AccentDetector()
+
+# Load the accent detector
+accent_detector = load_accent_detector()
 
 # Function to download video
 def download_video(url, output_path):
@@ -406,11 +440,11 @@ def analyze_accent(audio_path, transcription):
         if not transcription or len(transcription.strip()) < 10:
             st.warning("Transcription is too short or empty. Results may not be accurate.")
 
-        # Initialize the accent detector
-        detector = AccentDetector()
+        # Use the globally loaded accent detector
+        global accent_detector
 
         # Predict the accent
-        result = detector.predict(audio_path, transcription)
+        result = accent_detector.predict(audio_path, transcription)
 
         # Validate the result
         if not result or not isinstance(result, dict):
@@ -475,14 +509,42 @@ def main():
         st.json(health_status)
         return
 
-    # Input for video URL
-    video_url = st.text_input("Enter a public video URL (YouTube, Loom, or direct MP4 link):")
+    # Create tabs for different input methods
+    url_tab, file_tab, sample_tab = st.tabs(["URL Input", "File Upload", "Local Sample"])
 
-    if st.button("Analyze Accent"):
-        if not video_url:
-            st.warning("Please enter a video URL.")
-            return
+    # Tab 1: URL Input
+    with url_tab:
+        # Input for video URL
+        video_url = st.text_input("Enter a public video URL (YouTube, Loom, or direct MP4 link):")
+        url_analyze_button = st.button("Analyze URL", key="analyze_url")
 
+    # Tab 2: File Upload
+    with file_tab:
+        # File uploader for audio/video files
+        uploaded_file = st.file_uploader(
+            "Upload an audio or video file:",
+            type=["mp4", "mp3", "wav", "m4a", "avi", "mov", "flac", "ogg"],
+            help="Upload an audio or video file to analyze the accent."
+        )
+        file_analyze_button = st.button("Analyze File", key="analyze_file")
+
+    # Tab 3: Local Sample
+    with sample_tab:
+        # Input for local file path
+        local_path = st.text_input(
+            "Enter path to local audio/video file:",
+            value="MP4_sample" if os.path.exists("MP4_sample") else "",
+            help="Enter the path to a local audio or video file, e.g., 'MP4_sample'"
+        )
+        sample_analyze_button = st.button("Analyze Local File", key="analyze_sample")
+
+    # Determine which input method to use
+    use_url = url_analyze_button and video_url
+    use_upload = file_analyze_button and uploaded_file is not None
+    use_local = sample_analyze_button and local_path
+
+    # Proceed if any of the analyze buttons were clicked
+    if use_url or use_upload or use_local:
         # Create a unique session ID for this analysis
         session_id = str(uuid.uuid4())
 
@@ -490,6 +552,32 @@ def main():
         temp_dir = tempfile.mkdtemp()
         video_path = os.path.join(temp_dir, f"video_{session_id}")
         audio_path = os.path.join(temp_dir, f"audio_{session_id}.wav")
+
+        # Handle the different input methods
+        if use_upload:
+            # Save the uploaded file
+            with open(video_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            st.success(f"File '{uploaded_file.name}' uploaded successfully!")
+            video_url = None  # Not using URL in this case
+        elif use_local:
+            # Check if the local file exists
+            if os.path.exists(local_path):
+                # Copy the local file to the temporary directory
+                import shutil
+                try:
+                    shutil.copy2(local_path, video_path)
+                    st.success(f"Local file '{local_path}' loaded successfully!")
+                    video_url = None  # Not using URL in this case
+                except Exception as e:
+                    st.error(f"Error loading local file: {str(e)}")
+                    return
+            else:
+                st.error(f"Local file '{local_path}' not found.")
+                return
+        elif not use_url:
+            st.warning("Please provide a URL, upload a file, or specify a local file path.")
+            return
 
         # Progress bar and status
         progress_bar = st.progress(0)
@@ -500,11 +588,20 @@ def main():
         error_occurred = False
 
         try:
-            # Step 1: Download video
-            status_text.text("Downloading video...")
-            if not download_video(video_url, video_path):
-                error_occurred = True
-                return
+            # Step 1: Get the video file (download or use uploaded/local file)
+            if video_url:
+                status_text.text("Downloading video...")
+                if not download_video(video_url, video_path):
+                    error_occurred = True
+                    return
+            else:
+                # We already have the file at video_path (from upload or local file)
+                status_text.text("Processing file...")
+                # Check if the file exists and has content
+                if not os.path.exists(video_path) or os.path.getsize(video_path) == 0:
+                    st.error("File is missing or empty.")
+                    error_occurred = True
+                    return
             progress_bar.progress(25)
 
             # Step 2: Extract audio
@@ -534,21 +631,98 @@ def main():
             status_text.text("Analysis complete!")
 
             st.subheader("Results")
+
+            # Display the detected accent
+            st.markdown(f"### Detected Accent")
+            st.markdown(f"**{accent_analysis['accent']} English**")
+
+            # Display the confidence score with a progress bar
+            st.markdown(f"### Confidence Score")
+            confidence = accent_analysis['confidence_score']
+            st.progress(min(confidence / 100, 1.0))
+            st.markdown(f"**{confidence:.1f}%**")
+
+            # Add confidence interpretation
+            if confidence > 90:
+                st.success("Very high confidence prediction")
+            elif confidence > 75:
+                st.success("High confidence prediction")
+            elif confidence > 50:
+                st.info("Moderate confidence prediction")
+            elif confidence > 30:
+                st.warning("Low confidence prediction")
+            else:
+                st.error("Very low confidence prediction - results may not be reliable")
+
+            # Display alternative accents if available
+            if "all_accents" in accent_analysis and len(accent_analysis["all_accents"]) > 1:
+                st.markdown(f"### Alternative Possibilities")
+
+                # Create a DataFrame for the alternatives
+                alternatives = accent_analysis["all_accents"][1:4]  # Show top 3 alternatives
+                alt_df = pd.DataFrame(alternatives)
+
+                # Format the confidence values
+                alt_df["confidence"] = alt_df["confidence"].apply(lambda x: f"{x:.1f}%")
+
+                # Display as a table
+                st.table(alt_df)
+
+            # Display the explanation
+            st.markdown(f"### Explanation")
+            st.markdown(accent_analysis['explanation'])
+
+            # Display a sample of the transcription
+            st.markdown(f"### Transcription Sample")
+            st.markdown(f"*\"{transcription[:200]}...\"*")
+
+            # Add a download button for the full results
+            full_results = {
+                "accent": accent_analysis["accent"],
+                "confidence_score": accent_analysis["confidence_score"],
+                "explanation": accent_analysis["explanation"],
+                "transcription": transcription
+            }
+
+            # Add alternative accents to the full results if available
+            if "all_accents" in accent_analysis:
+                full_results["alternative_accents"] = accent_analysis["all_accents"][1:]
+
+            # Add a note if this is a placeholder result
+            if accent_analysis.get("is_placeholder", False):
+                st.warning("Note: This is a placeholder result. For more accurate results, please install FFmpeg and set up the OpenAI API key.")
+                full_results["is_placeholder"] = True
+
+            st.download_button(
+                label="Download Full Results",
+                data=json.dumps(full_results, indent=2),
+                file_name="accent_analysis_results.json",
+                mime="application/json"
+            )
+
+            # Add feedback mechanism
+            st.markdown(f"### Feedback")
+            st.write("Was this accent prediction accurate?")
+
             col1, col2 = st.columns(2)
 
             with col1:
-                st.markdown(f"### Detected Accent")
-                st.markdown(f"**{accent_analysis['accent']} English**")
-
-                st.markdown(f"### Confidence Score")
-                st.markdown(f"**{accent_analysis['confidence_score']:.1f}%**")
+                if st.button("👍 Yes, it's correct"):
+                    st.success("Thank you for your feedback! This helps improve our model.")
 
             with col2:
-                st.markdown(f"### Explanation")
-                st.markdown(accent_analysis['explanation'])
+                if st.button("👎 No, it's incorrect"):
+                    correct_accent = st.selectbox(
+                        "What is the correct accent?",
+                        ["American", "British", "Australian", "Indian", "Canadian", "Other"]
+                    )
 
-                st.markdown(f"### Transcription Sample")
-                st.markdown(f"*\"{transcription[:200]}...\"*")
+                    if correct_accent == "Other":
+                        other_accent = st.text_input("Please specify the accent:")
+                        if other_accent:
+                            st.success(f"Thank you for your feedback! We'll use this to improve our model's recognition of {other_accent} accents.")
+                    else:
+                        st.success(f"Thank you for your feedback! We'll use this to improve our model's recognition of {correct_accent} accents.")
 
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")

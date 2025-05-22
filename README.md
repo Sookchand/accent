@@ -1,104 +1,90 @@
-# English  ccent Detector
+# English Accent Detector
 
-A tool that annlyzes p speaker's accent from a video tohhelp evaluate English language proficiency for hiringnpurposes.
+A tool that analyzes a speaker's accent from a video or audio file to help evaluate English language proficiency for hiring purposes.
 
-##Fues
+## Features
 
-V PocessAccptpubli voURL (YuTub,Lom, odtMP4 links
- Audio trcExtcudrom video udio nmlys se video for analysis
-- **AccenttClassification**: Ideitifies the speakaers 's lisE accent (e.g., Britigh, American, Ausornfnan)
-- **Ccefidence  Scoingring**: iPrsoa cvidesen a score  configdenc e score for E0-100%)nglish proficiency (0-100%)
---**Explanation**: Generatessa brief explanaeian nf accent characteristics
+- **Multiple Input Methods**: Process YouTube URLs, direct media links, uploaded files, or local files
+- **Audio Extraction**: Extracts audio from video for analysis
+- **Accent Classification**: Identifies the speaker's English accent (e.g., British, American, Australian)
+- **Confidence Scoring**: Provides a confidence score for English proficiency (0-100%)
+- **Explanation**: Generates a brief explanation of accent characteristics
+- **Alternative Suggestions**: Shows alternative accent possibilities when confidence is low
 
 ## Demo
 
-You can try ththle l ieve atd emo ena t: [Acor cppenht Detecator tApepe](orhttrtaplitsa://a ccoent -diseit a ecactorl.strleamlit.app/) (Note: This is a placeholder link)
+You can try the live demo at: [Accent Detector App](https://accent-detector.streamlit.app/) (Note: This is a placeholder link)
 
-##  Hwow Itorks Works
+## How It Works
 
-1. **Vidio doeo Download*e t*:  The toaoslt d ownlo oroads e thoei vi eo 
-2. **Audio Ex Exctiontra It ectiaotsnt*e a*di: tr cIt rextraectsd the audio track from the video
-3. **Transcription**: OpenAI's Whisper API transcr bet tha cperci be se e
-4.  **Aceent Aallysss*: A  mccine hinre le marnl inag mod teela ain alayurzes th e audcio n
-5. **Results**: The tool displays tth eete ted dccentt ecntiedn a sccrecent, econfnii
+1. **Input Processing**: The tool accepts YouTube URLs, direct media links, uploaded files, or local files
+2. **Audio Extraction**: It extracts the audio track from the video or processes the audio file directly
+3. **Transcription**: OpenAI's Whisper API transcribes the speech
+4. **Accent Analysis**: A machine learning model analyzes the audio and transcription
+5. **Results**: The tool displays the detected accent, confidence score, and explanation
 
-##  eetu  Inscn
+## Setup Instructions
 
-### Prerequisste
+### Prerequisites
 
-- Pyttonhon  3r.8i or 
-highere st n ur sst
- pe  e for transcription
-
-tlai
-
- Cle t esit
-  
-  gi cetsreneede
- ndeecor
-
-
-nsta he rii
-
-pi sluinst
-   
+- Python 3.8 or higher
 - FFmpeg installed on your system
--  Opeatena A.enI  Aile PIth you  kpeney  fo re Whisper transcription
-   
-### Insetallxampleation
-   
-   The ei the . l t d  pen e
+- OpenAI API key for Whisper transcription
+
+### Installation
+
 1. Clone this repository:
-   ```n tection
+   ```bash
    git clone https://github.com/yourusername/accent-detector.git
-  n  ce Stredmlit a p aocacly:
-cent-detector
- tr am it r`` `
+   cd accent-detector
+   ```
 
 2. Install the required dependencies:
- he a  `i``o  e vie  http://ocahs5
-
-   psipe install -r requirements.txt
+   ```bash
+   pip install -r requirements.txt
    ```
- te ui ieo i the ted
-3.  Cire ateal ae  `.ennv` file with your OpenAI API key:
-   ``it f` the naisto mte
-4   ie  the resclp  .eoning thv d.tectee accentx aonfidence mcorep led  .planationenv
+
+3. Create a `.env` file with your OpenAI API key:
    ```
-   Te Tnheal netai edit the `.env` file to add your OpenAI API key.
+   OPENAI_API_KEY=your_api_key_here
+   ```
 
-# ## ideo Rrunensing th eses  tAppp to licaltai onesr aris atms
- udo racon se mpe  u r aud oesin
-Run tpeehe R Sognitiotrea mses liet app  hlocea lol hy:ht tansco
- ent lassiition: rte a leor odel to e pad ith a trained ML model)
+4. Install FFmpeg:
+   - Windows: Download from [ffmpeg.org](https://ffmpeg.org/download.html) and add to PATH
+   - macOS: `brew install ffmpeg`
+   - Ubuntu: `sudo apt install ffmpeg`
 
-## Deployment Options
+### Running the App
 
-This project includes several deployment options:
-
-1. **Docker**: Use `docker-compose up` to run the application in a contane
-2. **Kubernetes**: Confguration fils in the `kubernetes/` directory
-3. **AWS**: Terraform configuration in the `terraform/` directory
-4. **Heroku**: Procfile and runtime.txt for Heroku deployment
-5. **Google Cloud**: Deployment instructions in DEPLOYENT.md
-6. **Azure**: Deployment instructions in DEPOYMENT.d
-
-Fr detailed depoyment instructions, see the [DEPLOYMENT.md](DEPLOYMENT.md file.
+Run the Streamlit app locally:
+```bash
+streamlit run app.py
 ```
-st Limrtateona
 
-m Thelcuite r iun apenp.tionpyse laeol  accent detection
-` ``i idepend o video ent  se o
-n sprs accentetetin
 The application will be available at http://localhost:8501
- te ve
+
 ## Usage
- mmar e ar el for ndetin
-1 . E ntero t ao  pube lic vaies dedo URL isn the input field
-2 . Cloveicrocek "nAnalyze  Adceceicntn"
-3. Wa itt f oro esthne  oa nualysie s teos complete
-4. View the results showing the detected accent, confidence score, and explanation
- ies
+
+### Method 1: URL Input
+1. Select the "URL Input" tab
+2. Enter a public video URL (YouTube, Loom, or direct media link)
+3. Click "Analyze URL"
+4. Wait for the analysis to complete
+5. View the results showing the detected accent, confidence score, and explanation
+
+### Method 2: File Upload
+1. Select the "File Upload" tab
+2. Upload an audio or video file (MP4, MP3, WAV, etc.)
+3. Click "Analyze File"
+4. Wait for the analysis to complete
+5. View the results
+
+### Method 3: Local Sample
+1. Select the "Local Sample" tab
+2. Enter the path to a local audio or video file (e.g., "MP4_sample")
+3. Click "Analyze Local File"
+4. Wait for the analysis to complete
+5. View the results
 ## Technical Details
 
 
@@ -126,9 +112,39 @@ For detailed deployment instructions, see the [DEPLOYMENT.md](DEPLOYMENT.md) fil
 - Processing time depends on video length and server load
 - Only supports English accent detection
 
+## Advanced Model Development
+
+For detailed guidance on developing a sophisticated accent detection model, refer to the [ADVANCED_MODEL.md](ADVANCED_MODEL.md) file.
+
+### Training a Custom Model
+
+The application includes several scripts to help you develop and train a custom accent detection model:
+
+1. **collect_dataset.py**: Collect a dataset for training from YouTube videos or existing audio files
+   ```
+   python collect_dataset.py --output_dir dataset --source youtube --urls urls.txt --accent american
+   ```
+
+2. **create_sample_dataset.py**: Create a synthetic sample dataset for testing
+   ```
+   python create_sample_dataset.py --output_dir dataset/sample --num_samples 5
+   ```
+
+3. **train_model.py**: Train a new accent detection model on your dataset
+   ```
+   python train_model.py --data_dir dataset --output_dir models
+   ```
+
+4. **evaluate_model.py**: Evaluate a trained model on a test dataset
+   ```
+   python evaluate_model.py --model_path models/accent_model.pkl --test_dir dataset/test
+   ```
+
+The trained model will be automatically loaded by the application if it's placed in the `models` directory.
+
 ## Future Improvements
 
-- Implement a proper machine learning model for accent detection
+- Implement a proper machine learning model for accent detection (see [ADVANCED_MODEL.md](ADVANCED_MODEL.md))
 - Add support for more languages and accents
 - Improve processing speed and efficiency
 - Add batch processing for multiple videos
