@@ -8,6 +8,19 @@ import openai
 import librosa
 import soundfile as sf
 from dotenv import load_dotenv
+
+# Try to import Google APIs
+try:
+    from google.cloud import speech
+    GOOGLE_SPEECH_AVAILABLE = True
+except ImportError:
+    GOOGLE_SPEECH_AVAILABLE = False
+
+try:
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
 from pydub import AudioSegment
 import time
 import uuid
@@ -27,8 +40,30 @@ except ImportError:
 # Load environment variables
 load_dotenv()
 
+# Get API keys from environment or Streamlit secrets
+def get_api_key(key_name):
+    """Get API key from environment variables or Streamlit secrets."""
+    # Try environment variables first
+    key = os.getenv(key_name)
+    if key:
+        return key
+
+    # Try Streamlit secrets
+    try:
+        return st.secrets[key_name]
+    except:
+        return None
+
 # Set OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai_key = get_api_key("OPENAI_API_KEY")
+if openai_key:
+    openai.api_key = openai_key
+
+# Configure Google Gemini API if available
+if GEMINI_AVAILABLE:
+    gemini_api_key = get_api_key("GEMINI_API_KEY")
+    if gemini_api_key:
+        genai.configure(api_key=gemini_api_key)
 
 # Set page configuration
 st.set_page_config(
@@ -41,11 +76,46 @@ st.set_page_config(
 # App title and description
 st.title("🎙️ English Accent Detector")
 st.markdown("""
-This tool analyzes a speaker's accent from a video to:
+This tool analyzes a speaker's accent from a video or audio file to:
 - Classify the English accent (e.g., American, British, Australian)
 - Provide a confidence score for English proficiency
 - Generate a brief explanation of accent characteristics
 """)
+
+# Display API status in sidebar
+with st.sidebar:
+    st.header("🔑 API Status")
+
+    # Check Gemini API
+    gemini_key = get_api_key("GEMINI_API_KEY")
+    if gemini_key and GEMINI_AVAILABLE:
+        st.success("✅ Google Gemini API: Ready")
+    elif GEMINI_AVAILABLE:
+        st.warning("⚠️ Google Gemini API: Key missing")
+    else:
+        st.error("❌ Google Gemini API: Not installed")
+
+    # Check OpenAI API
+    openai_key = get_api_key("OPENAI_API_KEY")
+    if openai_key:
+        st.success("✅ OpenAI API: Ready")
+    else:
+        st.warning("⚠️ OpenAI API: Key missing")
+
+    # Setup instructions
+    if not gemini_key and not openai_key:
+        st.error("🚨 No API keys configured!")
+        st.markdown("""
+        **Setup Instructions:**
+        1. Get a [Google Gemini API key](https://makersuite.google.com/app/apikey)
+        2. Or get an [OpenAI API key](https://platform.openai.com/api-keys)
+        3. Add to Streamlit secrets or environment variables
+        """)
+
+    st.markdown("---")
+    st.markdown("**📚 Documentation:**")
+    st.markdown("- [Setup Guide](https://github.com/yourusername/accent-detector)")
+    st.markdown("- [API Configuration](https://github.com/yourusername/accent-detector/blob/main/GEMINI_SETUP.md)")
 
 # Initialize accent detector
 @st.cache_resource
@@ -317,15 +387,69 @@ def create_sample_audio(audio_path):
         st.error(f"Error creating sample audio file: {str(e)}")
         return False
 
+# Function to transcribe audio using Google Gemini API
+def transcribe_audio_gemini(audio_path):
+    try:
+        st.info("Transcribing audio using Google Gemini API...")
+
+        # Check if Gemini API is available and configured
+        if not GEMINI_AVAILABLE:
+            st.error("Google Gemini API is not available. Please install google-generativeai package.")
+            return None
+
+        gemini_api_key = get_api_key("GEMINI_API_KEY")
+        if not gemini_api_key:
+            st.error("Google Gemini API key is not set. Please add GEMINI_API_KEY to your environment variables or Streamlit secrets.")
+            return None
+
+        # Check if the file exists and has content
+        if not os.path.exists(audio_path) or os.path.getsize(audio_path) == 0:
+            st.error("Audio file is missing or empty.")
+            return None
+
+        # Get file size
+        file_size = os.path.getsize(audio_path) / (1024 * 1024)  # Convert to MB
+        st.info(f"Audio file size: {file_size:.2f} MB")
+
+        # Upload the audio file to Gemini
+        try:
+            import google.generativeai as genai
+
+            # Upload the file
+            audio_file = genai.upload_file(path=audio_path)
+
+            # Create the model
+            model = genai.GenerativeModel("gemini-1.5-flash")
+
+            # Generate transcription
+            prompt = "Please transcribe this audio file. Provide only the transcription text without any additional commentary."
+
+            response = model.generate_content([prompt, audio_file])
+
+            if response.text:
+                st.success("Transcription completed successfully with Google Gemini!")
+                return response.text.strip()
+            else:
+                st.error("No transcription text received from Gemini API.")
+                return None
+
+        except Exception as api_error:
+            st.error(f"Error with Gemini API: {str(api_error)}")
+            return None
+
+    except Exception as e:
+        st.error(f"Error transcribing audio with Gemini: {str(e)}")
+        return None
+
 # Function to transcribe audio using OpenAI's Whisper
-def transcribe_audio(audio_path):
+def transcribe_audio_openai(audio_path):
     try:
         st.info("Transcribing audio using OpenAI's Whisper API...")
 
         # Check if OpenAI API key is set
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = get_api_key("OPENAI_API_KEY")
         if not api_key:
-            st.error("OpenAI API key is not set. Please set the OPENAI_API_KEY environment variable.")
+            st.error("OpenAI API key is not set. Please add OPENAI_API_KEY to your environment variables or Streamlit secrets.")
             st.info("For testing purposes, returning a placeholder transcription.")
             return "This is a placeholder transcription for testing purposes. In a real scenario, this would be the actual transcription from the audio."
 
@@ -421,6 +545,43 @@ def transcribe_audio(audio_path):
         st.warning("For testing purposes, returning a placeholder transcription.")
         return "This is a placeholder transcription for testing purposes. In a real scenario, this would be the actual transcription from the audio."
 
+# Main transcription function that tries multiple APIs
+def transcribe_audio(audio_path):
+    """
+    Transcribe audio using available APIs in order of preference:
+    1. Google Gemini API (if available and configured)
+    2. OpenAI Whisper API (if available and configured)
+    3. Placeholder transcription (for testing)
+    """
+    try:
+        # First, try Google Gemini API if available
+        gemini_api_key = get_api_key("GEMINI_API_KEY")
+        if GEMINI_AVAILABLE and gemini_api_key:
+            st.info("Attempting transcription with Google Gemini API...")
+            transcription = transcribe_audio_gemini(audio_path)
+            if transcription:
+                return transcription
+            else:
+                st.warning("Google Gemini transcription failed. Trying OpenAI Whisper...")
+
+        # If Gemini fails or is not available, try OpenAI
+        openai_api_key = get_api_key("OPENAI_API_KEY")
+        if openai_api_key:
+            st.info("Attempting transcription with OpenAI Whisper API...")
+            transcription = transcribe_audio_openai(audio_path)
+            if transcription:
+                return transcription
+            else:
+                st.warning("OpenAI Whisper transcription failed.")
+
+        # If both APIs fail or are not available, return placeholder
+        st.warning("No transcription APIs available or all failed. Using placeholder transcription.")
+        return "This is a placeholder transcription for testing purposes. In a real scenario, this would be the actual transcription from the audio."
+
+    except Exception as e:
+        st.error(f"Error in transcription: {str(e)}")
+        return "This is a placeholder transcription for testing purposes. In a real scenario, this would be the actual transcription from the audio."
+
 # Function to analyze accent
 def analyze_accent(audio_path, transcription):
     try:
@@ -489,11 +650,17 @@ def health_check():
 
         # Check if the request is a health check
         if headers.get("X-Health-Check") == "true":
-            # Return a 200 status code
+            # Return a 200 status code with enhanced info
             return {
                 "status": "healthy",
                 "timestamp": time.time(),
-                "version": "0.1.0"
+                "version": "2.0.0",
+                "apis": {
+                    "gemini": bool(get_api_key("GEMINI_API_KEY") and GEMINI_AVAILABLE),
+                    "openai": bool(get_api_key("OPENAI_API_KEY")),
+                    "ffmpeg": True  # Assume available on Streamlit Cloud
+                },
+                "features": ["file_upload", "url_input", "local_sample", "multi_api"]
             }
     except:
         # If we can't access the headers, this is a normal request

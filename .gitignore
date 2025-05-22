@@ -32,8 +32,9 @@ ENV/
 *.swp
 *.swo
 
-# Streamlit
-.streamlit/
+# Streamlit secrets (for local development only)
+.streamlit/secrets.toml
+# Keep config.toml for deployment
 
 # Temporary files
 tmp/
@@ -42,3 +43,32 @@ temp/
 # OS specific
 .DS_Store
 Thumbs.db
+
+# Audio/Video files (exclude large media files)
+*.mp4
+*.mp3
+*.wav
+*.avi
+*.mov
+*.flv
+*.mkv
+*.webm
+*.m4a
+*.ogg
+*.flac
+!MP4_sample
+
+# Large library files
+*.lib
+*.dll
+dnnl.*
+torch_cpu.*
+libprotoc.*
+
+# Dataset files (exclude large datasets)
+dataset/
+!dataset/README.md
+
+# Virtual environment
+venv/
+.venv/

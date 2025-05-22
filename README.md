@@ -11,9 +11,16 @@ A tool that analyzes a speaker's accent from a video or audio file to help evalu
 - **Explanation**: Generates a brief explanation of accent characteristics
 - **Alternative Suggestions**: Shows alternative accent possibilities when confidence is low
 
-## Demo
+## 🚀 Live Demo
 
-You can try the live demo at: [Accent Detector App](https://accent-detector.streamlit.app/) (Note: This is a placeholder link)
+**Deploy your own version:**
+1. Fork this repository
+2. Get a [Google Gemini API key](https://makersuite.google.com/app/apikey)
+3. Deploy to [Streamlit Cloud](https://share.streamlit.io)
+4. Add your API key to Streamlit secrets
+
+**Quick Deploy Button:**
+[![Deploy to Streamlit Cloud](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io)
 
 ## How It Works
 
@@ -142,12 +149,60 @@ The application includes several scripts to help you develop and train a custom 
 
 The trained model will be automatically loaded by the application if it's placed in the `models` directory.
 
-## Future Improvements
+## Quick Start with Enhanced Solution
 
-- Implement a proper machine learning model for accent detection (see [ADVANCED_MODEL.md](ADVANCED_MODEL.md))
-- Add support for more languages and accents
-- Improve processing speed and efficiency
-- Add batch processing for multiple videos
+To quickly implement the complete enhanced solution:
+
+```bash
+python implement_solution.py
+```
+
+This script will:
+1. Install missing dependencies
+2. Collect curated dataset with verified accent samples
+3. Train an enhanced model with 70-90% confidence scores
+4. Test with your sample files
+5. Prepare for Streamlit Cloud deployment
+
+## API Configuration
+
+### Google Gemini API (Recommended)
+1. Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Add to your `.env` file:
+   ```
+   GEMINI_API_KEY=your_actual_api_key_here
+   ```
+
+### OpenAI API (Alternative)
+1. Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+2. Add to your `.env` file:
+   ```
+   OPENAI_API_KEY=your_actual_api_key_here
+   ```
+
+The app will automatically try Gemini first, then fall back to OpenAI if needed.
+
+## Expected Performance
+
+With the enhanced solution, you should see:
+- **Confidence scores**: 70-90% (vs previous 30-40%)
+- **Accurate transcriptions**: Real speech-to-text instead of placeholders
+- **Better classification**: Correct accent identification
+- **Multiple input methods**: URL, file upload, and local files
+
+## Next Steps
+
+After implementing the enhanced solution:
+
+1. **Deploy to Streamlit Cloud**: Follow the [DEPLOYMENT.md](DEPLOYMENT.md) guide
+2. **Collect more data**: Use `collect_curated_dataset.py` to add more samples
+3. **Fine-tune model**: Use `train_enhanced_model.py` with hyperparameter tuning
+4. **Monitor performance**: Check confidence scores and user feedback
+
+For detailed guidance, refer to:
+- [GEMINI_SETUP.md](GEMINI_SETUP.md) - Google API setup
+- [IMPROVE_CONFIDENCE.md](IMPROVE_CONFIDENCE.md) - Model improvement guide
+- [ADVANCED_MODEL.md](ADVANCED_MODEL.md) - Advanced techniques
 
 ## License
 

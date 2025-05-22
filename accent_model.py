@@ -41,16 +41,23 @@ class AccentDetector:
             "Canadian": "The speaker shows Canadian English features, including Canadian raising and merged vowels before 'r'."
         }
 
-        # Check if a model path is provided
-        if model_path and os.path.exists(model_path):
+        # Try to load enhanced model first
+        enhanced_model_path = os.path.join("models", "enhanced_accent_model.pkl")
+        if os.path.exists(enhanced_model_path):
+            self.use_placeholder = False
+            self.model = self.load_enhanced_model()
+            print("✅ Loaded enhanced accent detection model")
+        elif model_path and os.path.exists(model_path):
             self.use_placeholder = False
             self.model = self.load_model(model_path)
             self.scaler = self.load_scaler(model_path.replace('.pkl', '_scaler.pkl'))
+            print(f"✅ Loaded accent detection model from {model_path}")
         else:
             # Use placeholder implementation
             self.use_placeholder = True
             self.model = None
             self.scaler = None
+            print("⚠️ Using placeholder accent detection model")
 
     def extract_features(self, audio_path):
         """
@@ -231,7 +238,13 @@ class AccentDetector:
 
             # Sort accents by probability (descending)
             sorted_indices = np.argsort(accent_probs)[::-1]
-            sorted_accents = [self.accents[i] for i in sorted_indices]
+
+            # Use label encoder if available (enhanced model)
+            if hasattr(self, 'label_encoder') and self.label_encoder is not None:
+                sorted_accents = [self.label_encoder.classes_[i] for i in sorted_indices]
+            else:
+                sorted_accents = [self.accents[i] for i in sorted_indices]
+
             sorted_probs = accent_probs[sorted_indices]
 
             # Get the most likely accent
@@ -348,6 +361,34 @@ class AccentDetector:
         except Exception as e:
             print(f"Error analyzing transcription: {str(e)}")
             return ""
+
+    def load_enhanced_model(self):
+        """Load the enhanced model with all components."""
+        try:
+            models_dir = "models"
+
+            # Load model
+            model_path = os.path.join(models_dir, "enhanced_accent_model.pkl")
+            with open(model_path, 'rb') as f:
+                model = pickle.load(f)
+
+            # Load scaler
+            scaler_path = os.path.join(models_dir, "enhanced_accent_model_scaler.pkl")
+            with open(scaler_path, 'rb') as f:
+                self.scaler = pickle.load(f)
+
+            # Load label encoder
+            encoder_path = os.path.join(models_dir, "enhanced_accent_model_encoder.pkl")
+            with open(encoder_path, 'rb') as f:
+                self.label_encoder = pickle.load(f)
+                # Update accents list from the trained model
+                self.accents = self.label_encoder.classes_.tolist()
+
+            return model
+
+        except Exception as e:
+            print(f"Error loading enhanced model: {str(e)}")
+            return None
 
     def predict_placeholder(self):
         """
